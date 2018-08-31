@@ -8,16 +8,20 @@
 #include <string>
 #include <vector>
 #include <wait.h>
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 
 #include "fork_utils.h"
 
-//#define BUFFER_MAX      32
-
+/**
+ * This is the child process function. Currently it waits for a command on the
+ * childs socket and when it arrives parse it and handle the request.
+ *
+ * @param proc_desc
+ * @return
+ */
 static int child_process(const process_desc_t * proc_desc) {
     fprintf(stderr, "child process(pid = %d)\n", proc_desc->child_pid);
-    char buf[BUFFER_MAX] = {0};
     bool done = false;
     int fd = proc_desc->fds[(int)fd_type::fd_child]; // get the child file descriptor
     fd_set sel_set;
@@ -31,13 +35,15 @@ static int child_process(const process_desc_t * proc_desc) {
         int selectRes = select(nfds, &sel_set, nullptr, nullptr, &t);
         if (selectRes > 0) {
             if (FD_ISSET(fd, &sel_set)) {
-                ssize_t bytes_read = read(proc_desc->fds[(int) fd_type::fd_child], buf, BUFFER_MAX-1);
-                buf[bytes_read] = '\0';
+                message_t * pMsg = child_get_msg(proc_desc);
+                assert(pMsg != nullptr);
 
-                fprintf(stderr, "bytes read = %zu (%s)\n", bytes_read, buf);
+                std::string cmd;
+                string_from_msg(pMsg, cmd);
 
-                if (strcmp(buf, "cmd:quit") == 0) {
-                    fprintf(stderr, "-- quiting child process\n");
+                fprintf(stderr, "cmd = %s\n", cmd.c_str());
+
+                if (cmd == "cmd:quit") {
                     done = true;
                 }
             }
@@ -48,8 +54,6 @@ static int child_process(const process_desc_t * proc_desc) {
             // error
             perror("select : ");
         }
-
-
     }
 
     fprintf(stderr, "child_process exiting\n");
@@ -61,7 +65,8 @@ bool test_fork_lambda() {
     int status = -1;
 
     process_desc_t * pDesc = do_fork([](const process_desc_t * pDesc) -> int {
-        fprintf(stderr, "From the lamba child process\n");
+        fprintf(stderr, "From the lambda child process\n");
+        sleep(2);
         return 10;
     });
 
@@ -87,6 +92,8 @@ int main() {
     int status;
     waitpid(pDesc->child_pid, &status, 0);
     printf("Status = %d\n", WEXITSTATUS(status));
+
+    close(pDesc->fds[(int)fd_type::fd_parent]);
 
     test_fork_lambda();
 

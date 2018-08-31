@@ -7,7 +7,7 @@
 
 #include <algorithm>
 
-#define BUFFER_MAX      32
+//#define BUFFER_MAX      32
 
 /**
  *
@@ -42,6 +42,6 @@ bool                send_msg_to_child(process_desc_t * proc_desc,
 bool                send_msg_to_child(process_desc_t * proc_desc, const std::string & msg);
 message_t *         child_get_msg(const process_desc_t * proc_desc);
 
-bool                string_from_msg(const message_t & msg, std::string & str);
+bool                string_from_msg(const message_t * msg, std::string & str);
 
 #endif //FORKIN_FORK_UTILS_H

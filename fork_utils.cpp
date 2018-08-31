@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 #include <wait.h>
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 
 #include "fork_utils.h"
@@ -42,6 +42,7 @@ process_desc_t * do_fork(const process_callback & child_process_cb) {
         fprintf(stderr, "fds[0] = %d fds[1] = %d\n", new_process_desc->fds[0],
                 new_process_desc->fds[1]);
         int result = child_process_cb(new_process_desc);
+        //close(new_process_desc->fds[(int)fd_type::fd_child]);
         exit(result);
     } else {
         // parent process
@@ -63,18 +64,67 @@ bool send_msg_to_child(process_desc_t * proc_desc, const char * data, ssize_t le
     assert(proc_desc != nullptr);
     assert(data != nullptr);
 
-    int fd = proc_desc->fds[(int)fd_type::fd_parent];
+    const int fd = proc_desc->fds[(int)fd_type::fd_parent];
+    auto sz = (uint32_t)length;
 
-    if (length > (BUFFER_MAX - 1)) {
-        fprintf(stderr, "-- error invalid length (must be less than %d)", BUFFER_MAX);
+    if (write(fd, &sz, sizeof(sz)) != sizeof(sz)) {
+        perror("write pktlen : ");
         return false;
     }
 
-    write(fd, data, length);
+    if (write(fd, data, (size_t)length) != length) {
+        perror("write data : ");
+        return false;
+    }
 
     return true;
 }
 
 bool send_msg_to_child(process_desc_t * proc_desc, const std::string & msg) {
     return send_msg_to_child(proc_desc, msg.c_str(), msg.length());
+}
+
+/***
+ * Call when child process wants to read a message sent from the parent.
+ *
+ * @param proc_desc
+ * @return pointer to message_t structure containing the message.
+ */
+message_t * child_get_msg(const process_desc_t * proc_desc) {
+    assert(proc_desc != nullptr);
+
+    fprintf(stderr, "child_get_msg()\n");
+
+    message_t * pNewMsg = nullptr;
+    auto        msgSize = (uint32_t)-1;
+    int         fd = proc_desc->fds[(int)fd_type::fd_child];
+
+    if (read(fd, &msgSize, sizeof(uint32_t)) != sizeof(uint32_t)) {
+        perror("read error : ");
+        return nullptr;
+    }
+
+    pNewMsg = (message_t *)malloc(sizeof(message_t) + msgSize);
+    assert(pNewMsg != nullptr);
+
+    pNewMsg->msg_size = msgSize;
+
+    if (read(fd, &pNewMsg->msg_data, msgSize) != (ssize_t)msgSize) {
+        perror("read error : ");
+        free(pNewMsg);
+        return nullptr;
+    }
+
+    return pNewMsg;
+}
+
+/**
+ * Return a string from a message structure.
+ * @param msg
+ * @param str
+ * @return
+ */
+bool string_from_msg(const message_t * msg, std::string & str) {
+    str = std::string((const char *)msg->msg_data, msg->msg_size);
+    return true;
 }
