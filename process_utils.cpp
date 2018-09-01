@@ -7,8 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/capability.h>
-
-typedef int cap_value_t;
+#include "process_utils.h"
 
 // capabilities array to use for no capabilities.
 const cap_value_t no_capabilities[] = {
@@ -20,7 +19,13 @@ const cap_value_t set_uid_gid_capabilities[] = {
     CAP_SETGID, CAP_SETUID, 0
 };
 
-int get_capabilities_count(const cap_value_t * cap) {
+/**
+ * Take a null terminated array of capabilities and return the count.
+ *
+ * @param cap array of capabilities
+ * @return count of capabilities in the array.
+ */
+int get_capabilities_count(const cap_value_t *cap) {
     const cap_value_t* p = cap;
     while (*p != 0) {
         p++;
@@ -28,7 +33,11 @@ int get_capabilities_count(const cap_value_t * cap) {
     return p - cap;
 }
 
-void drop_caps(const cap_value_t * cap) {
+/**
+ *
+ * @param cap
+ */
+void drop_caps(const cap_value_t *cap) {
     auto cnt = get_capabilities_count(cap);
     printf("found %d caps\n", cnt);
 
