@@ -1,3 +1,13 @@
+/**
+ * fork_utils.cpp
+ *
+ * This module contains the functions which are responsible for forking the
+ * processes and communicating between the parent and child process.
+ *
+ * @author Michael A. Uman
+ * @date   August 31, 2018
+ */
+
 #include <iostream>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -10,7 +20,6 @@
 #include <wait.h>
 #include <cassert>
 #include <cstring>
-
 #include "fork_utils.h"
 
 /**
@@ -44,10 +53,10 @@ process_desc_t * do_fork(const process_callback & child_process_cb) {
         int result = child_process_cb(new_process_desc);
         //close(new_process_desc->fds[(int)fd_type::fd_child]);
         exit(result);
-    } else {
-        // parent process
-        close(new_process_desc->fds[(int)fd_type::fd_child]);
     }
+
+    // parent process
+    close(new_process_desc->fds[(int)fd_type::fd_child]);
 
     return new_process_desc;
 }
@@ -127,4 +136,26 @@ message_t * child_get_msg(const process_desc_t * proc_desc) {
 bool string_from_msg(const message_t * msg, std::string & str) {
     str = std::string((const char *)msg->msg_data, msg->msg_size);
     return true;
+}
+
+/**
+ * A quick and dirty utility to split a string by ':' (colon) into a vector
+ * of strings.
+ *
+ * @param str String in the form of 'aaaa:bbbb:xxxx'
+ * @param strVec Reference to a vector of strings which will be filled with the
+ *               items in the input.
+ * @return true if there were items found in the input string.
+ */
+bool split_string(const std::string & str, string_vector & strVec) {
+    std::string copy (str.c_str());
+    char *      pch = (char *)copy.c_str();
+
+    pch = strtok(pch, ":");
+    while (pch != nullptr) {
+        strVec.push_back(pch);
+        pch = strtok(NULL, ":");
+    }
+
+    return (!strVec.empty());
 }

@@ -1,16 +1,26 @@
-//
-// Created by muman on 8/31/18.
-//
+/**
+ * fork_utils.h
+ *
+ * This module contains the functions which are responsible for forking the
+ * processes and communicating between the parent and child process.
+ *
+ * "Stick a fork in it!" - https://www.knowyourphrase.com/stick-a-fork-in-it
+ *
+ * @author Michael A. Uman
+ * @date   August 31, 2018
+ */
 
 #ifndef FORKIN_FORK_UTILS_H
 #define FORKIN_FORK_UTILS_H
 
 #include <algorithm>
+#include <string>
+#include <vector>
 
-//#define BUFFER_MAX      32
+using string_vector = std::vector<std::string>;
 
 /**
- *
+ *  Order of sockets in a socket pair (fd[0] = parent, fd[1] = child)
  */
 enum class fd_type {
     fd_parent,
@@ -18,7 +28,8 @@ enum class fd_type {
 };
 
 /**
- *
+ *  This structure holds the important information regarding the parent & child
+ *  processes.
  */
 typedef struct _process_desc {
     int parent_pid = -1;
@@ -43,5 +54,8 @@ bool                send_msg_to_child(process_desc_t * proc_desc, const std::str
 message_t *         child_get_msg(const process_desc_t * proc_desc);
 
 bool                string_from_msg(const message_t * msg, std::string & str);
+
+
+bool                split_string(const std::string & str, string_vector & strVec);
 
 #endif //FORKIN_FORK_UTILS_H

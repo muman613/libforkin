@@ -1,3 +1,11 @@
+/**
+ * main.cpp
+ *
+ * Example code for forking a process and communicating between the parent
+ * and child processes.
+ *
+ */
+
 #include <iostream>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -40,11 +48,18 @@ static int child_process(const process_desc_t * proc_desc) {
 
                 std::string cmd;
                 string_from_msg(pMsg, cmd);
+                string_vector  strVec;
+                if (split_string(cmd, strVec)) {
+                    if (strVec.size() == 2) {
+                        fprintf(stderr, "cmd type = [%s]\n"
+                                        "cmd func = [%s]\n",
+                                        strVec[0].c_str(),
+                                        strVec[1].c_str());
 
-                fprintf(stderr, "cmd = %s\n", cmd.c_str());
-
-                if (cmd == "cmd:quit") {
-                    done = true;
+                        if (strVec[1] == "quit") {
+                            done = true;
+                        }
+                    }
                 }
             }
         } else if (selectRes == 0) {
