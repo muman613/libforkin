@@ -15,6 +15,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <algorithm>
+#include <functional>
 #include <string>
 #include <vector>
 #include <wait.h>

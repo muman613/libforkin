@@ -13,6 +13,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <algorithm>
+#include <functional>
 #include <string>
 #include <vector>
 #include <wait.h>
@@ -22,6 +23,7 @@
 
 #include "fork_utils.h"
 #include "process_utils.h"
+#include "server_utils.h"
 
 /**
  * This is the child process function. Currently it waits for a command on the
@@ -77,39 +79,6 @@ static int child_process(const process_desc_t * proc_desc) {
 
     return 0;
 }
-
-#if 0
-static int socket_server(const process_desc_t * proc_desc, int port) {
-    int sock_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
-    if (sock_fd == -1) {
-        perror("socket_server call to socket failed");
-        return 10;
-    }
-    // Forcefully attaching socket to the port 8080
-    int opt = 1;
-    if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
-                   &opt, sizeof(opt)))
-    {
-        perror("setsockopt");
-        return 10;
-    }
-
-    struct sockaddr_in address = { 0 };
-
-//        .sin_family = AF_INET,
-//        .sin_addr = {
-//                .s_addr = INADDR_ANY,
-//        },
-//        .sin_port = port,
-    //};
-
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(port);
-
-    return 0;
-}
-#endif
 
 bool test_fork_lambda() {
     int status = -1;

@@ -1,5 +1,15 @@
-#include <stdio.h>
-#include <string.h>
+/**
+ * process_utils.cpp
+ *
+ * This module contains the functions which are responsible for setting process
+ * capabilities and privileges.
+ *
+ * @author Michael A. Uman
+ * @date   August 31, 2018
+ */
+
+#include <cstdio>
+#include <cstring>
 #include <string>
 #include <algorithm>
 #include <sys/prctl.h>
