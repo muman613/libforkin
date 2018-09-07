@@ -53,16 +53,25 @@ int server_cb(const server_struct_t * server_desc, int fd, struct sockaddr * add
     return return_code;
 }
 
-int main() {
+/**
+ *
+ * @param argc
+ * @param arg
+ * @return
+ */
+int main(int argc, const char * arg[]) {
+    int             result = 1;
+
     server_struct_t simpleServer;
 
     create_inet_server(&simpleServer, "simpleServer", 8080);
 
     if (open_socket_server(&simpleServer) == 0) {
         if (run_socket_server(&simpleServer, server_cb) == 0) {
-
+            printf("Socket server exited...\n");
+            result = 0;
         }
     }
 
-    return 0;
+    return result;
 }

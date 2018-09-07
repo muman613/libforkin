@@ -25,6 +25,7 @@ using server_callback = std::function<int(const server_struct_t *, int fd, struc
 void create_inet_server(server_struct_t * server_desc,
         const std::string & server_name,
         int server_port);
+
 void create_local_server(server_struct_t * server_desc,
         const std::string & server_name,
         const std::string & server_domain);
