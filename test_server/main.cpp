@@ -18,7 +18,45 @@
 
 #include "server_utils.h"
 
+/**
+ * Example server main handler.
+ *
+ * @param server_desc
+ * @param fd
+ * @param addr
+ * @return
+ */
+int server_cb(const server_struct_t * server_desc, int fd, struct sockaddr * addr) {
+    printf("server_cb(%p, %d, %p)\n", server_desc, fd, addr);
+
+    char buffer[128];
+
+    ssize_t nbytes = recv(fd, buffer, sizeof(buffer), 0);
+    if (nbytes > 1) {
+        buffer[nbytes - 1] = '\0';
+    }
+    printf("buffer %s\n", buffer);
+
+    close(fd);
+
+    int return_code = 0;
+    std::string shutdown_cmd = "shutdown";
+    if (strncmp(buffer, shutdown_cmd.c_str(), shutdown_cmd.size()) == 0) {
+        return_code = 1;
+    }
+    return return_code;
+}
+
 int main() {
-    printf("Hello world!\n");
+    server_struct_t simpleServer;
+
+    create_inet_server(&simpleServer, "simpleServer", 8080);
+
+    if (open_socket_server(&simpleServer) == 0) {
+        if (run_socket_server(&simpleServer, server_cb) == 0) {
+
+        }
+    }
+
     return 0;
 }
