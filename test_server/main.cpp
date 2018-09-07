@@ -30,20 +30,26 @@ int server_cb(const server_struct_t * server_desc, int fd, struct sockaddr * add
     printf("server_cb(%p, %d, %p)\n", server_desc, fd, addr);
 
     char buffer[128];
+    bool done = false;
+    int return_code = 0;
 
-    ssize_t nbytes = recv(fd, buffer, sizeof(buffer), 0);
-    if (nbytes > 1) {
-        buffer[nbytes - 1] = '\0';
+    while (!done) {
+        ssize_t nbytes = recv(fd, buffer, sizeof(buffer), 0);
+
+        if (nbytes > 1) {
+            buffer[nbytes - 1] = '\0';
+        }
+        printf("buffer %s\n", buffer);
+
+
+        std::string shutdown_cmd = "shutdown";
+        if (strncmp(buffer, shutdown_cmd.c_str(), shutdown_cmd.size()) == 0) {
+            done = true;
+            return_code = 1;
+        }
     }
-    printf("buffer %s\n", buffer);
 
     close(fd);
-
-    int return_code = 0;
-    std::string shutdown_cmd = "shutdown";
-    if (strncmp(buffer, shutdown_cmd.c_str(), shutdown_cmd.size()) == 0) {
-        return_code = 1;
-    }
     return return_code;
 }
 
