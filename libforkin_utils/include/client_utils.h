@@ -32,8 +32,6 @@ void create_local_client(client_struct_t * client_desc,
 
 int open_socket_client(client_struct_t *server_desc);
 
-int run_socket_client(client_struct_t * server_desc, client_callback cb);
-
 bool resolve_host(const std::string & hostname, sockaddr_in * serv_addr);
 
 

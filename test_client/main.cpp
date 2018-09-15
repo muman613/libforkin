@@ -25,6 +25,47 @@
 
 #include "client_utils.h"
 
+
+//static void sendLineToServer(int fd, const std::string & line) {
+//    std::string sline = line;
+//
+//    if (sline.back() != '\n') {
+//        sline += '\n';
+//    }
+//
+//    write(fd, sline.c_str(), sline.length());
+//}
+
+static void sendLineToServer(int fd, const char * line) {
+#if 1
+    send(fd, line, strlen(line), 0);
+#else
+    write(fd, line, strlen(line));
+#endif
+}
+
+int client_cb(const client_struct_t * client_desc, int fd) {
+
+    printf("client_cb()\n");
+
+    sendLineToServer(fd, "GET / HTTP/1.1\n");
+    sendLineToServer(fd, "\n");
+
+    char buf[1024];
+
+#if 1
+    ssize_t bytes = recv(fd, buf, sizeof(buf), 0);
+#else
+    ssize_t bytes = read(fd, &buf, 1024);
+#endif
+
+    buf[bytes] = 0;
+
+    printf("%s\n", buf);
+
+    return 0;
+}
+
 int main(int argc, char * argv[]) {
     std::string hostname;
 
@@ -42,10 +83,15 @@ int main(int argc, char * argv[]) {
 
         client_struct_t babyClient;
 
-        create_inet_client(&babyClient, "babyClient", "google.com", 80);
+        create_inet_client(&babyClient, "babyClient", hostname, 80);
 
         if (open_socket_client(&babyClient) == 0) {
-            printf("Connection to host completed!\n");
+
+//            int retcode = run_socket_client(&babyClient, client_cb);
+
+            int retcode = client_cb(&babyClient, babyClient.server_socket);
+
+            printf("Connection to host completed! retcode = %d\n", retcode);
         }
     }
 

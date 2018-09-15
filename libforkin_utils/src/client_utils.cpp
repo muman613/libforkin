@@ -76,6 +76,9 @@ int open_socket_client(client_struct_t *client_desc) {
                 return -1;
             }
 
+            addr.sin_family = AF_INET;
+            addr.sin_port   = htons(client_desc->server_port);
+
             if (connect(client_desc->server_socket, (sockaddr *)&addr, sizeof(addr)) != 0) {
                 perror("connect fauked ");
                 close(client_desc->server_socket);
@@ -89,10 +92,6 @@ int open_socket_client(client_struct_t *client_desc) {
     return 0;
 }
 
-int run_socket_client(client_struct_t * client_desc, client_callback cb) {
-    // TODO: Implement
-   return 0;
-}
 /**
  *
  * @param hostname Hostname or IP to resolve to address.
