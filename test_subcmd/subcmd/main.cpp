@@ -13,9 +13,20 @@ void display_process_info() {
 
 
 int main(int argc, char * argv[]) {
-    printf("Hello World, this is a test...\n");
+    if (argc == 1) {
+        printf("Hello World, this is a test...\n");
+        display_process_info();
+    } else {
+        char buffer[32];
 
-    display_process_info();
+        fgets(buffer, 32, stdin);
+
+        printf("%s\n", buffer);
+//        for (int i = 0 ; i < argc ; i++){
+//            printf("arg %d = %s\n", i, argv[i]);
+//        }
+
+    }
 
     return 10;
 }
