@@ -155,7 +155,7 @@ bool split_string(const std::string & str, string_vector & strVec) {
     pch = strtok(pch, ":");
     while (pch != nullptr) {
         strVec.push_back(pch);
-        pch = strtok(NULL, ":");
+        pch = strtok(nullptr, ":");
     }
 
     return (!strVec.empty());

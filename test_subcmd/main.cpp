@@ -1,3 +1,6 @@
+/**
+ * test new popen2 function.
+ */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -28,13 +31,10 @@ char ** get_command_args(const char * full_command) {
 
     tok = strtok(command, " ");
     while (tok != nullptr) {
-        printf("tok = %s\n", tok);
-        tok = strtok(NULL, " ");
+        tok = strtok(nullptr, " ");
         arg_count++;
     }
     free(pcmd);
-
-    printf("found %d args\n", arg_count);
 
     char ** arg_array = nullptr;
 
@@ -45,12 +45,12 @@ char ** get_command_args(const char * full_command) {
     pcmd = command;
     tok = strtok(command, " ");
     arg_array[0] = strdup(tok);
-    tok = strtok(NULL, " ");
+    tok = strtok(nullptr, " ");
     int i = 0;
 
     while (tok != nullptr) {
         arg_array[1 + i] = strdup(tok);
-        tok = strtok(NULL, " ");
+        tok = strtok(nullptr, " ");
         i++;
     }
     arg_array[1 + i] = nullptr;
@@ -60,26 +60,15 @@ char ** get_command_args(const char * full_command) {
     return arg_array;
 }
 
-void display_args(char * args[]) {
-    assert(args != nullptr);
 
-    for (size_t index = 0 ; args[index] != nullptr ; index++) {
-        printf("arg %zu [%s]\n", index, args[index]);
-    }
-
-    return;
-}
-
-
+/**
+ * main entry point
+ */
 int main(int argc, char * argv[]) {
-//    char * command_str = strdup("/bin/cat > /tmp/boo");
-//    char ** args = get_command_args(command_str);
-//    printf("args = %p\n", args);
-//    display_args(args);
-
     display_process_info();
 
-    char ** args = get_command_args(SUBCMD_CMD);
+    char ** args;
+    args = get_command_args(SUBCMD_CMD);
     FILE * read_fp = popen2(args, "r");
 
     if (read_fp != nullptr) {
@@ -95,7 +84,8 @@ int main(int argc, char * argv[]) {
         int result = pclose2(read_fp);
         if (WIFEXITED(result)) {
             printf("Result returned = %d\n", WEXITSTATUS(result));
-            printf("Std Out = %s\n", str.c_str());
+            printf("Std Out = %s", str.c_str());
+            printf("------\n");
         } else {
 
         }
@@ -105,7 +95,11 @@ int main(int argc, char * argv[]) {
     FILE * write_fp = popen2(args, "w");
 
     if (write_fp != nullptr) {
-        fprintf(write_fp, "This is a test!");
+//        fprintf(write_fp, "This is a test!\n");
+//        fflush(write_fp);
+        fputs("This is a test!\n", write_fp);
+        fputs("Do you think you are a bird?\n", write_fp);
+        fflush(write_fp);
 
         int result = pclose2(write_fp);
         if (WIFEXITED(result)) {
@@ -118,3 +112,5 @@ int main(int argc, char * argv[]) {
 
     return 0;
 }
+
+

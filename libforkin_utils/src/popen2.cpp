@@ -1,9 +1,9 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
 #include <sys/types.h>
 #include <unistd.h>
-#include <assert.h>
+#include <cassert>
 #include <sys/wait.h>
 #include <string>
 #include "popen2.h"
@@ -142,8 +142,8 @@ FILE * popen2(const char* const args[], const char * type) {
         } else {
             dup2(fd[PIPE_READ_END], STDIN_FILENO);
         }
-        close(fd[PIPE_READ_END]);
         close(fd[PIPE_WRITE_END]);
+        close(fd[PIPE_READ_END]);
 
         setgid(1000);
         setuid(1000);
@@ -156,7 +156,7 @@ FILE * popen2(const char* const args[], const char * type) {
             fp = fdopen(fd[PIPE_READ_END], "r");
             (void)close(fd[PIPE_WRITE_END]);
         } else {
-            fp = fdopen(fd[PIPE_WRITE_END], "w");
+            fp = fdopen(dup(fd[PIPE_WRITE_END]), "w");
             (void)close(fd[PIPE_READ_END]);
         }
 
@@ -207,12 +207,13 @@ int pclose2(FILE * fp) {
         return -1;
     }
 
+    fclose(fp);
+
     if (waitpid(child_pid, &result, 0) == -1) {
         perror("waitpid failed");
         return -1;
     }
 
-    fclose(fp);
 
     // Remove the node from the list...
     if (p_last == nullptr) {

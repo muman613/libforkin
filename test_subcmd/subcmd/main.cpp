@@ -20,11 +20,9 @@ int main(int argc, char * argv[]) {
         char buffer[32];
 
         fgets(buffer, 32, stdin);
-
-        printf("%s\n", buffer);
-//        for (int i = 0 ; i < argc ; i++){
-//            printf("arg %d = %s\n", i, argv[i]);
-//        }
+        printf(">> %s", buffer);
+        fgets(buffer, 32, stdin);
+        printf(">> %s", buffer);
 
     }
 
