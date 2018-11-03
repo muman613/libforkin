@@ -5,7 +5,7 @@
  * capabilities and privileges.
  *
  * @author Michael A. Uman
- * @date   August 31, 2018
+ * @date   November 2, 2018
  */
 
 #include <cstdio>
@@ -17,15 +17,18 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/capability.h>
+#include <signal.h>   //signal(3)
+#include <sys/stat.h> //umask(3)
+#include <syslog.h>   //syslog(3), openlog(3), closelog(3)
 #include "process_utils.h"
 
 // capabilities array to use for no capabilities.
-const cap_value_t no_capabilities[] = {
+static const cap_value_t no_capabilities[] = {
     0,
 };
 
 // Capabilities needed for set the uid (and gid)
-const cap_value_t set_uid_gid_capabilities[] = {
+static const cap_value_t set_uid_gid_capabilities[] = {
     CAP_SETGID, CAP_SETUID, 0
 };
 
@@ -40,7 +43,7 @@ int get_capabilities_count(const cap_value_t *cap) {
     while (*p != 0) {
         p++;
     }
-    return p - cap;
+    return (int)(p - cap);
 }
 
 /**
@@ -74,8 +77,8 @@ void set_capabilities(const cap_value_t* permissive, const cap_value_t* effectiv
 
     // Sets the capabilities of this process to only the given ones.
     // All other capabilities are dropped.
-    size_t permissive_cnt = get_capabilities_count(permissive);
-    size_t effective_cnt = get_capabilities_count(effective);
+    int permissive_cnt = get_capabilities_count(permissive);
+    int effective_cnt = get_capabilities_count(effective);
 
     // Starting with an empty set of capabilities
     cap_t caps = cap_init();
@@ -105,24 +108,58 @@ void set_capabilities(const cap_value_t* permissive, const cap_value_t* effectiv
     //log_cap_free(caps);
 }
 
-#if 0
-int main() {
-    uid_t myuid = getuid();
-
-    printf("Running as user %d\n", myuid);
-
-    drop_caps(no_capabilities);
-    set_capabilities(set_uid_gid_capabilities, set_uid_gid_capabilities);
-    if (setuid(1401826305) == 0) {
-        printf("setuid success!\n");
-    } else {
-        fprintf(stderr, "ERROR: Unable to setuid!\n");
+int daemonize(const char* name, const char* path, const char* outfile,
+        const char* errfile, const char* infile)
+{
+    if(!path) { path="/"; }
+    if(!name) { name="medaemon"; }
+    if(!infile) { infile="/dev/null"; }
+    if(!outfile) { outfile="/dev/null"; }
+    if(!errfile) { errfile="/dev/null"; }
+    //printf("%s %s %s %s\n",name,path,outfile,infile);
+    pid_t child;
+    //fork, detach from process group leader
+    if( (child=fork())<0 ) { //failed fork
+        fprintf(stderr,"error: failed fork\n");
+        exit(EXIT_FAILURE);
+    }
+    if (child>0) { //parent
+        exit(EXIT_SUCCESS);
+    }
+    if( setsid()<0 ) { //failed to become session leader
+        fprintf(stderr,"error: failed setsid\n");
+        exit(EXIT_FAILURE);
     }
 
-    myuid = getuid();
+    //catch/ignore signals
+    signal(SIGCHLD,SIG_IGN);
+    signal(SIGHUP,SIG_IGN);
 
-    printf("Running as user %d\n", myuid);
+    //fork second time
+    if ( (child=fork())<0) { //failed fork
+        fprintf(stderr,"error: failed fork\n");
+        exit(EXIT_FAILURE);
+    }
+    if( child>0 ) { //parent
+        exit(EXIT_SUCCESS);
+    }
 
-    return 0;
+    //new file permissions
+    umask(0);
+    //change to path directory
+    chdir(path);
+
+    //Close all open file descriptors
+    for(auto fd=(int)sysconf(_SC_OPEN_MAX); fd>0; --fd) {
+        close(fd);
+    }
+
+    //reopen stdin, stdout, stderr
+    stdin=fopen(infile,"r");   //fd=0
+    stdout=fopen(outfile,"w+");  //fd=1
+    stderr=fopen(errfile,"w+");  //fd=2
+
+    //open syslog
+    openlog(name,LOG_PID,LOG_DAEMON);
+    return(0);
 }
-#endif

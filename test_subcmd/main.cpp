@@ -60,7 +60,18 @@ char ** get_command_args(const char * full_command) {
     return arg_array;
 }
 
+void free_args(char ** args) {
+    assert(args != nullptr);
 
+    char ** cargs = args;
+
+    while (*cargs != nullptr) {
+        free(*cargs);
+        cargs++;
+    }
+
+    free(args);
+}
 /**
  * main entry point
  */
@@ -91,12 +102,12 @@ int main(int argc, char * argv[]) {
         }
     }
 
+    free_args(args);
+
     args = get_command_args("subcmd/subcmd write");
     FILE * write_fp = popen2(args, "w");
 
     if (write_fp != nullptr) {
-//        fprintf(write_fp, "This is a test!\n");
-//        fflush(write_fp);
         fputs("This is a test!\n", write_fp);
         fputs("Do you think you are a bird?\n", write_fp);
         fflush(write_fp);

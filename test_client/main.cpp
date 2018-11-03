@@ -74,7 +74,7 @@ int main(int argc, char * argv[]) {
 
         printf("Resolving hostname %s\n", hostname.c_str());
 
-        sockaddr_in addr;
+        sockaddr_in addr = {};
 
         if (resolve_host(hostname, &addr)) {
             printf( "Resolved IP address as %s\n", inet_ntoa(addr.sin_addr));

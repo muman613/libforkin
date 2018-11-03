@@ -23,6 +23,7 @@
 #include <cstring>
 #include "fork_utils.h"
 
+namespace forkin::process {
 /**
  * do a fork process and run the child callback.
  *
@@ -30,37 +31,37 @@
  * @return
  */
 
-process_desc_t * do_fork(const process_callback & child_process_cb) {
-    auto new_process_desc = new process_desc_t;
+    process_desc_t *do_fork(const process_callback &child_process_cb) {
+        auto new_process_desc = new process_desc_t;
 
-    // create a pair of sockets.
-    if (socketpair(AF_UNIX, SOCK_STREAM, 0, new_process_desc->fds) < 0) {
-        perror("socketpair error : ");
-        return nullptr;
+        // create a pair of sockets.
+        if (socketpair(AF_UNIX, SOCK_STREAM, 0, new_process_desc->fds) < 0) {
+            perror("socketpair error : ");
+            return nullptr;
+        }
+
+        new_process_desc->parent_pid = getpid();
+        new_process_desc->child_pid = fork();
+
+        if (new_process_desc->child_pid < 0) {
+            perror("fork failed : ");
+            return nullptr;
+        } else if (new_process_desc->child_pid == 0) {
+            // child process
+            close(new_process_desc->fds[(int) fd_type::fd_parent]);
+            new_process_desc->child_pid = getpid();
+            fprintf(stderr, "fds[0] = %d fds[1] = %d\n", new_process_desc->fds[0],
+                    new_process_desc->fds[1]);
+            int result = child_process_cb(new_process_desc);
+            //close(new_process_desc->fds[(int)fd_type::fd_child]);
+            exit(result);
+        }
+
+        // parent process
+        close(new_process_desc->fds[(int) fd_type::fd_child]);
+
+        return new_process_desc;
     }
-
-    new_process_desc->parent_pid = getpid();
-    new_process_desc->child_pid  = fork();
-
-    if (new_process_desc->child_pid < 0) {
-        perror("fork failed : ");
-        return nullptr;
-    } else if (new_process_desc->child_pid == 0) {
-        // child process
-        close(new_process_desc->fds[(int)fd_type::fd_parent]);
-        new_process_desc->child_pid = getpid();
-        fprintf(stderr, "fds[0] = %d fds[1] = %d\n", new_process_desc->fds[0],
-                new_process_desc->fds[1]);
-        int result = child_process_cb(new_process_desc);
-        //close(new_process_desc->fds[(int)fd_type::fd_child]);
-        exit(result);
-    }
-
-    // parent process
-    close(new_process_desc->fds[(int)fd_type::fd_child]);
-
-    return new_process_desc;
-}
 
 /**
  * Send a message from the parent to the child process
@@ -70,29 +71,29 @@ process_desc_t * do_fork(const process_callback & child_process_cb) {
  * @param length length of the data (must be less than MAX_BUFFER)
  * @return
  */
-bool send_msg_to_child(process_desc_t * proc_desc, const char * data, ssize_t length) {
-    assert(proc_desc != nullptr);
-    assert(data != nullptr);
+    bool send_msg_to_child(process_desc_t *proc_desc, const char *data, ssize_t length) {
+        assert(proc_desc != nullptr);
+        assert(data != nullptr);
 
-    const int fd = proc_desc->fds[(int)fd_type::fd_parent];
-    auto sz = (uint32_t)length;
+        const int fd = proc_desc->fds[(int) fd_type::fd_parent];
+        auto sz = (uint32_t) length;
 
-    if (write(fd, &sz, sizeof(sz)) != sizeof(sz)) {
-        perror("write pktlen : ");
-        return false;
+        if (write(fd, &sz, sizeof(sz)) != sizeof(sz)) {
+            perror("write pktlen : ");
+            return false;
+        }
+
+        if (write(fd, data, (size_t) length) != length) {
+            perror("write data : ");
+            return false;
+        }
+
+        return true;
     }
 
-    if (write(fd, data, (size_t)length) != length) {
-        perror("write data : ");
-        return false;
+    bool send_msg_to_child(process_desc_t *proc_desc, const std::string &msg) {
+        return send_msg_to_child(proc_desc, msg.c_str(), msg.length());
     }
-
-    return true;
-}
-
-bool send_msg_to_child(process_desc_t * proc_desc, const std::string & msg) {
-    return send_msg_to_child(proc_desc, msg.c_str(), msg.length());
-}
 
 /***
  * Call when child process wants to read a message sent from the parent.
@@ -100,33 +101,33 @@ bool send_msg_to_child(process_desc_t * proc_desc, const std::string & msg) {
  * @param proc_desc
  * @return pointer to message_t structure containing the message.
  */
-message_t * child_get_msg(const process_desc_t * proc_desc) {
-    assert(proc_desc != nullptr);
+    message_t *child_get_msg(const process_desc_t *proc_desc) {
+        assert(proc_desc != nullptr);
 
-    fprintf(stderr, "child_get_msg()\n");
+        fprintf(stderr, "child_get_msg()\n");
 
-    message_t * pNewMsg = nullptr;
-    auto        msgSize = (uint32_t)-1;
-    int         fd = proc_desc->fds[(int)fd_type::fd_child];
+        message_t *pNewMsg = nullptr;
+        auto msgSize = (uint32_t) -1;
+        int fd = proc_desc->fds[(int) fd_type::fd_child];
 
-    if (read(fd, &msgSize, sizeof(uint32_t)) != sizeof(uint32_t)) {
-        perror("read error : ");
-        return nullptr;
+        if (read(fd, &msgSize, sizeof(uint32_t)) != sizeof(uint32_t)) {
+            perror("read error : ");
+            return nullptr;
+        }
+
+        pNewMsg = (message_t *) malloc(sizeof(message_t) + msgSize);
+        assert(pNewMsg != nullptr);
+
+        pNewMsg->msg_size = msgSize;
+
+        if (read(fd, &pNewMsg->msg_data, msgSize) != (ssize_t) msgSize) {
+            perror("read error : ");
+            free(pNewMsg);
+            return nullptr;
+        }
+
+        return pNewMsg;
     }
-
-    pNewMsg = (message_t *)malloc(sizeof(message_t) + msgSize);
-    assert(pNewMsg != nullptr);
-
-    pNewMsg->msg_size = msgSize;
-
-    if (read(fd, &pNewMsg->msg_data, msgSize) != (ssize_t)msgSize) {
-        perror("read error : ");
-        free(pNewMsg);
-        return nullptr;
-    }
-
-    return pNewMsg;
-}
 
 /**
  * Return a string from a message structure.
@@ -134,10 +135,10 @@ message_t * child_get_msg(const process_desc_t * proc_desc) {
  * @param str
  * @return
  */
-bool string_from_msg(const message_t * msg, std::string & str) {
-    str = std::string((const char *)msg->msg_data, msg->msg_size);
-    return true;
-}
+    bool string_from_msg(const message_t *msg, std::string &str) {
+        str = std::string((const char *) msg->msg_data, msg->msg_size);
+        return true;
+    }
 
 /**
  * A quick and dirty utility to split a string by ':' (colon) into a vector
@@ -148,15 +149,16 @@ bool string_from_msg(const message_t * msg, std::string & str) {
  *               items in the input.
  * @return true if there were items found in the input string.
  */
-bool split_string(const std::string & str, string_vector & strVec) {
-    std::string copy (str.c_str());
-    char *      pch = (char *)copy.c_str();
+    bool split_string(const std::string &str, string_vector &strVec) {
+        std::string copy(str);
+        auto *pch = (char *)copy.c_str();
 
-    pch = strtok(pch, ":");
-    while (pch != nullptr) {
-        strVec.push_back(pch);
-        pch = strtok(nullptr, ":");
+        pch = strtok(pch, ":");
+        while (pch != nullptr) {
+            strVec.push_back(pch);
+            pch = strtok(nullptr, ":");
+        }
+
+        return (!strVec.empty());
     }
-
-    return (!strVec.empty());
 }

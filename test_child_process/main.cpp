@@ -25,6 +25,8 @@
 #include "process_utils.h"
 #include "server_utils.h"
 
+using namespace forkin::process;
+
 /**
  * This is the child process function. Currently it waits for a command on the
  * childs socket and when it arrives parse it and handle the request.

@@ -68,7 +68,7 @@ int open_socket_client(client_struct_t *client_desc) {
     if (client_desc->server_type == AF_LOCAL) {
         // TODO: Implement local domain client
     } else if (client_desc->server_type == AF_INET) {
-        sockaddr_in addr;
+        sockaddr_in addr = {};
         if (resolve_host(client_desc->server_name, &addr)) {
             client_desc->server_socket = socket(AF_INET, SOCK_STREAM, 0);
             if (client_desc->server_socket == -1) {
