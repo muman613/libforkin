@@ -6,6 +6,7 @@
 #include <cassert>
 #include <sys/wait.h>
 #include <string>
+#include <errno.h>
 #include "popen2.h"
 
 static struct _popen_proc_entry {

@@ -12,16 +12,20 @@
 #include <cstring>
 #include <string>
 #include <algorithm>
+#ifndef __APPLE__
 #include <sys/prctl.h>
 #include <linux/capability.h>
+#include <sys/capability.h>
+#endif
 #include <sys/types.h>
 #include <unistd.h>
-#include <sys/capability.h>
+
 #include <signal.h>   //signal(3)
 #include <sys/stat.h> //umask(3)
 #include <syslog.h>   //syslog(3), openlog(3), closelog(3)
 #include "process_utils.h"
 
+#ifndef __APPLE__
 // capabilities array to use for no capabilities.
 static const cap_value_t no_capabilities[] = {
     0,
@@ -107,6 +111,7 @@ void set_capabilities(const cap_value_t* permissive, const cap_value_t* effectiv
     cap_free(caps);
     //log_cap_free(caps);
 }
+#endif // __APPLE__
 
 int daemonize(const char* name, const char* path, const char* outfile,
         const char* errfile, const char* infile)

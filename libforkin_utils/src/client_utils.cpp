@@ -8,7 +8,7 @@
 #include <functional>
 #include <string>
 #include <vector>
-#include <wait.h>
+#include <sys/wait.h>
 #include <cassert>
 #include <cstring>
 #include <netinet/in.h>

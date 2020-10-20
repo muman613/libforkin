@@ -12,7 +12,7 @@
 #include <functional>
 #include <string>
 #include <vector>
-#include <wait.h>
+#include <sys/wait.h>
 #include <cassert>
 #include <cstring>
 #include <netinet/in.h>
@@ -25,6 +25,7 @@
 
 #include "client_utils.h"
 
+using namespace std;
 
 //static void sendLineToServer(int fd, const std::string & line) {
 //    std::string sline = line;
@@ -46,39 +47,47 @@ static void sendLineToServer(int fd, const char * line) {
 
 int client_cb(const client_struct_t * client_desc, int fd) {
 
-    printf("client_cb()\n");
+    cout << "client_cb()" << endl;
 
     sendLineToServer(fd, "GET / HTTP/1.1\n");
+    sendLineToServer(fd, "HOST: developer.mozilla.org\n");
     sendLineToServer(fd, "\n");
 
-    char buf[1024];
+    char buf[8192];
 
-#if 1
-    ssize_t bytes = recv(fd, buf, sizeof(buf), 0);
-#else
-    ssize_t bytes = read(fd, &buf, 1024);
-#endif
+    std::string html;
 
-    buf[bytes] = 0;
+    while (true) {
+      ssize_t bytes;
 
-    printf("%s\n", buf);
+      bytes = recv(fd, buf, 8192, 0);
+      cout << "bytes " << bytes << endl;
+      cout << "buff[0]" << (int)buf[0] << endl;
+
+      html += std::string(buf, bytes);
+
+      if (bytes != 8192)
+        break;
+    }
+
+    cout << html << endl;
 
     return 0;
 }
 
 int main(int argc, char * argv[]) {
+    int         result = 0;
     std::string hostname;
 
     if (argc == 2) {
         hostname = argv[1];
 
-        printf("Resolving hostname %s\n", hostname.c_str());
+        cout << "Resolving hostname " << hostname << endl;
 
         sockaddr_in addr = {};
 
         if (resolve_host(hostname, &addr)) {
-            printf( "Resolved IP address as %s\n", inet_ntoa(addr.sin_addr));
-
+            cout << "Resolved IP address as " << inet_ntoa(addr.sin_addr) << endl;
         }
 
         client_struct_t babyClient;
@@ -86,14 +95,13 @@ int main(int argc, char * argv[]) {
         create_inet_client(&babyClient, "babyClient", hostname, 80);
 
         if (open_socket_client(&babyClient) == 0) {
-
-//            int retcode = run_socket_client(&babyClient, client_cb);
-
             int retcode = client_cb(&babyClient, babyClient.server_socket);
-
-            printf("Connection to host completed! retcode = %d\n", retcode);
+            cout << "Connection to host completed! retcode = " << retcode << endl;
         }
+    } else {
+      cerr << "ERROR: Must specify hostname" << endl;
+      result = 10;
     }
 
-    return 0;
+    return result;
 }

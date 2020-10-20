@@ -15,7 +15,7 @@
 #include <functional>
 #include <string>
 #include <vector>
-#include <wait.h>
+#include <sys/wait.h>
 #include <cassert>
 #include <cstring>
 #include <netinet/in.h>
@@ -107,7 +107,7 @@ int open_socket_server(server_struct_t *server_desc) {
         }
 
         int opt = 1;
-        if (setsockopt(server_desc->server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+        if (setsockopt(server_desc->server_socket, SOL_SOCKET, SO_REUSEADDR /* | SO_REUSEPORT */,
                        &opt, sizeof(opt)))
         {
             perror("setsockopt");

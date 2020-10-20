@@ -6,24 +6,13 @@
  *
  */
 
-#include <iostream>
-#include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <algorithm>
 #include <functional>
 #include <string>
-#include <vector>
-#include <wait.h>
 #include <cassert>
-#include <cstring>
-#include <netinet/in.h>
-
 #include "fork_utils.h"
-#include "process_utils.h"
-#include "server_utils.h"
 
 using namespace forkin::process;
 
@@ -82,6 +71,11 @@ static int child_process(const process_desc_t * proc_desc) {
     return 0;
 }
 
+/**
+ * Test do_fork() using a lambda function.
+ *
+ * @return true
+ */
 bool test_fork_lambda() {
     int status = -1;
 

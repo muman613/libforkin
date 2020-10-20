@@ -6,21 +6,16 @@
  *
  * @author Michael A. Uman
  * @date   August 31, 2018
+ * @date   October 20, 2020
  */
 
-#include <iostream>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
-#include <sys/time.h>
 #include <unistd.h>
-#include <algorithm>
 #include <functional>
-#include <string>
-#include <vector>
-#include <wait.h>
 #include <cassert>
 #include <cstring>
+
 #include "fork_utils.h"
 
 namespace forkin::process {
